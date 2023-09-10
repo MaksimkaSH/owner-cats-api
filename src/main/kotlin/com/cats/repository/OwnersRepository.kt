@@ -1,11 +1,15 @@
 package com.cats.repository
 
 import com.cats.model.Owner
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+
 import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+
 import java.util.UUID
 
 object OwnersRepository : Table("owners") {
@@ -23,7 +27,9 @@ object OwnersRepository : Table("owners") {
                     birthday = ownerModel[birthday]
                 )
             }
-        } catch (e: Exception) {
+        } catch (e: NoSuchElementException) {
+            null
+        } catch (e: IllegalArgumentException) {
             null
         }
     }
@@ -36,6 +42,14 @@ object OwnersRepository : Table("owners") {
                 it[birthday] = owner.birthday
             }
         }
+    }
+
+    fun deleteOwnerById(id: UUID) : Boolean{
+        var isDeleted = false
+        transaction {
+            isDeleted = OwnersRepository.deleteWhere { OwnersRepository.id.eq(id) } > 0
+        }
+        return isDeleted
     }
 
 }

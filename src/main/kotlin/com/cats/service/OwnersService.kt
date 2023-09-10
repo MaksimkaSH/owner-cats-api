@@ -4,21 +4,35 @@ import com.cats.model.Id
 import com.cats.model.Owner
 import com.cats.repository.CatsRepository
 import com.cats.repository.OwnersRepository
+
 import io.ktor.http.*
+import io.ktor.serialization.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
+
 import java.util.UUID
 
 class OwnersService {
 
-    suspend fun getOwnerById(ctx: ApplicationCall) {
-        val receive = ctx.receive<Id>()
-        if (receive.id == null) {
-            ctx.respond(HttpStatusCode.BadRequest)
-            return
+    private suspend fun processId(ctx: ApplicationCall): UUID? {
+        val receive: Id
+        try {
+            receive = ctx.receive<Id>()
+        } catch (e: JsonConvertException) {
+            ctx.respond(HttpStatusCode.BadRequest, "Bad request")
+            return null
         }
-        val owner = OwnersRepository.getOwner(receive.id)
+        if (receive.id == null) {
+            ctx.respond(HttpStatusCode.BadRequest, "Bad request")
+            return null
+        }
+        return receive.id
+    }
+
+    suspend fun getOwnerById(ctx: ApplicationCall) {
+        val id = processId(ctx) ?: return
+        val owner = OwnersRepository.getOwner(id)
         if (owner == null) {
             ctx.respond(HttpStatusCode.NotFound, "Can't found owner with this id")
             return
@@ -30,28 +44,32 @@ class OwnersService {
         val receive = ctx.receive<Owner>()
         //лень обрабатывать
         val id = UUID.randomUUID()
-        OwnersRepository.addOwner(
-            Owner(
-                id = id,
-                name = receive.name,
-                birthday = receive.birthday
-            )
+        val owner = Owner(
+            id = id,
+            name = receive.name,
+            birthday = receive.birthday
         )
-        ctx.respond(HttpStatusCode.OK, "Ya ustal")
+        OwnersRepository.addOwner(owner)
+        ctx.respond(HttpStatusCode.OK, owner)
     }
 
     suspend fun getListOfCats(ctx: ApplicationCall) {
-        val receive = ctx.receive<Id>()
-        if (receive.id == null) {
-            ctx.respond(HttpStatusCode.BadRequest)
-            return
-        }
-        val cats = CatsRepository.getListOfCats(receive.id)
+        val id = processId(ctx) ?: return
+        val cats = CatsRepository.getListOfCats(id)
         if (cats.isEmpty()) {
-            ctx.respond(HttpStatusCode.NotFound, " The owner with this id has no cats")
+            ctx.respond(HttpStatusCode.NotFound, "The owner with this id has no cats")
         } else {
             ctx.respond(HttpStatusCode.OK, cats)
         }
+    }
 
+    suspend fun deleteOwnerById(ctx: ApplicationCall) {
+        val id = processId(ctx) ?: return
+        if (OwnersRepository.deleteOwnerById(id)) {
+            ctx.respond(HttpStatusCode.BadRequest, "Owner with this id doesn't exist")
+            return
+        }
+        CatsRepository.deleteOwnerById(id)
+        ctx.respond(HttpStatusCode.OK, "OK")
     }
 }

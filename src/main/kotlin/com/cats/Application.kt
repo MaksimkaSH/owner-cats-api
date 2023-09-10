@@ -3,6 +3,8 @@ package com.cats
 import com.cats.plugins.*
 import com.cats.route.configureCatsRouting
 import com.cats.route.configureOwnerRouting
+import io.ktor.http.*
+
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
@@ -16,6 +18,7 @@ fun main() {
 }
 
 fun Application.module() {
+    println(DEFAULT_PORT)
     configureSerialization()
     configureRouting()
     configureCatsRouting()

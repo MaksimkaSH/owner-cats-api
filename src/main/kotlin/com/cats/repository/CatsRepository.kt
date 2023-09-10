@@ -1,11 +1,13 @@
 package com.cats.repository
 
 import com.cats.model.Cat
+
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.postgresql.util.PSQLException
+
 import java.util.NoSuchElementException
 import java.util.UUID
 
@@ -55,7 +57,7 @@ object CatsRepository : Table("cats") {
         return isDeleted
     }
 
-    fun updateCatInformation(cat: Cat): Boolean {
+    fun updateCatInformation(cat: Cat): Cat? {
         var isUpdated = false
         transaction {
             isUpdated = CatsRepository.update({ CatsRepository.id.eq(cat.id!!) }) {
@@ -65,7 +67,19 @@ object CatsRepository : Table("cats") {
                 it[owner] = cat.owner
             } > 0
         }
-        return isUpdated
+        return if (isUpdated) {
+            cat
+        } else {
+            null
+        }
+    }
+
+    fun deleteOwnerById(id: UUID) {
+        transaction {
+            CatsRepository.update({ CatsRepository.owner.eq(id) }) {
+                it[owner] = null
+            }
+        }
     }
 
     fun getListOfCats(id: UUID): List<Cat> {

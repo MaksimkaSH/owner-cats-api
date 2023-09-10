@@ -14,7 +14,7 @@ fun Application.configureOwnerRouting() {
                 OwnersService().addNewOwner(this.context)
             }
             delete {
-
+                OwnersService().deleteOwnerById(this.context)
             }
             route("/cats") {
                 get {
