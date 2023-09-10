@@ -1,6 +1,7 @@
 package com.cats.model
 
 import com.cats.serializers.UUIDSerializer
+
 import kotlinx.serialization.Serializable
 import java.util.UUID
 

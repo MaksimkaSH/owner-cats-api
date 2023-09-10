@@ -2,6 +2,7 @@ package com.cats.model
 
 import com.cats.serializers.LocalDateSerializer
 import com.cats.serializers.UUIDSerializer
+
 import kotlinx.serialization.Serializable
 import java.time.LocalDate
 import java.util.UUID
